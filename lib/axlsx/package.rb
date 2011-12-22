@@ -139,7 +139,7 @@ module Axlsx
 
       workbook.worksheets.each do |sheet|            
         @parts << {:entry => "xl/#{sheet.rels_pn}", :doc => sheet.relationships.to_xml, :schema => RELS_XSD}
-        @parts << {:entry => "xl/#{sheet.pn}", :doc => sheet.to_xml, :schema => SML_XSD}        
+        @parts << {:entry => "xl/#{sheet.pn}", :doc => sheet.as_xml, :schema => SML_XSD}
       end
       @parts
     end

@@ -46,6 +46,12 @@ module Axlsx
       xml.row(:r => index+1) { @cells.each { |cell| cell.to_xml(xml) } }
     end
 
+    # Serializes the row
+    # @return [String]
+    def as_xml
+      "<row r=\"#{index+1}\">#{@cells.map{|cell| cell.as_xml}.join}</row>"
+    end
+
     # Adds a singel sell to the row based on the data provided and updates the worksheet's autofit data.
     # @return [Cell]
     def add_cell(value="", options={})

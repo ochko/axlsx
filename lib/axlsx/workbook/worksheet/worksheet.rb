@@ -258,6 +258,29 @@ module Axlsx
       builder.to_xml
     end
 
+    # Serializes the worksheet document
+    # @return [String]
+    def as_xml
+      builder = Nokogiri::XML::Builder.new(:encoding => ENCODING) do |xml|
+        xml.worksheet(:xmlns => XML_NS,
+                      :'xmlns:r' => XML_NS_R) {
+          if @auto_fit_data.size > 0
+            xml.cols {
+              @auto_fit_data.each_with_index do |col, index|
+                min_max = index+1
+                xml.col(:min=>min_max, :max=>min_max, :width => auto_width(col), :customWidth=>1)
+              end
+            }
+          end
+          xml.sheetData "__rows__"
+          xml.autoFilter :ref=>@auto_filter if @auto_filter
+          xml.mergeCells(:count=>@merged_cells.size) { @merged_cells.each { | mc | xml.mergeCell(:ref=>mc) } } unless @merged_cells.empty?
+          xml.drawing :"r:id"=>"rId1" if @drawing
+        }
+      end
+      builder.to_xml.sub("__rows__", @rows.map{|row| row.as_xml}.join("\n"))
+    end
+
     # The worksheet relationships. This is managed automatically by the worksheet
     # @return [Relationships]
     def relationships

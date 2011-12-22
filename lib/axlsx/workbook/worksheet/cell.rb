@@ -291,6 +291,101 @@ module Axlsx
       end
     end
 
+    # Cell pattern.
+    # All cells with same pattern should have same xml representation
+    def xml_pattern
+      n, i = 0, 0
+
+      n += 2**i if (i+=1) && @font_name
+      n += 2**i if (i+=1) && @charset
+      n += 2**i if (i+=1) && @family
+      n += 2**i if (i+=1) && @b
+      n += 2**i if (i+=1) && @i
+      n += 2**i if (i+=1) && @strike
+      n += 2**i if (i+=1) && @outline
+      n += 2**i if (i+=1) && @shadow
+      n += 2**i if (i+=1) && @condense
+      n += 2**i if (i+=1) && @extend
+      n += 2**i if (i+=1) && @color
+      n += 2**i if (i+=1) && @sz
+      n += 2**i if (i+=1) && @u
+      n += 2**i if (i+=1) && @verAlign
+      n += 2**i if (i+=1) && @scheme
+
+      if (i+=1) && @type == :string
+        n += 2**i
+        n += 2**i if (i+=1) && @value.start_with?('=')
+      end
+      n
+    end
+
+    Patterns = {}
+    def as_xml
+      pattern = xml_pattern
+      cached = Patterns[pattern] || build_pattern(pattern)
+      xml = cached
+      cached.scan(/_([a-z@]+)_/).flatten.each do |method|
+        vvv = self.instance_eval(method)
+        xml = xml.sub("_#{method}_", vvv.to_s)
+      end
+      xml
+    end
+
+    def build_pattern(pattern)
+      xml = nil
+      if @type == :string
+        if @value.start_with?('=')
+          xml = '<c r="_r_" t="str" s="_style_"><f>_formula_body_</f></c>'
+        else
+          xml='<c r="_r_" t="inlineStr" s="_style_">'
+          xml+='<is>'
+          xml+='<r>'
+          if (2**15 -1) & pattern > 1
+            xml+='<rPr>'
+            xml+='<rFont val="_@font_name_"/>'     if @font_name
+            xml+='<charset val="_@charset_"/>'     if @charset
+            xml+='<family val="_@family_"/>'       if @family
+            xml+='<b val="_@b_"/>'                 if @b
+            xml+='<i val="_@i_"/>'                 if @i
+            xml+='<strike val="_@strike_"/>'       if @strike
+            xml+='<outline val="_@outline_"/>'     if @outline
+            xml+='<shadow val="_@shadow_"/>'       if @shadow
+            xml+='<condense val="_@condense_"/>'   if @condense
+            xml+='<extend val="_@extend_"/>'       if @extend
+            xml+='<color rgb="_@color.rgb_"/>'     if @color
+            xml+='<sz val="_@sz_"/>'               if @sz
+            xml+='<u val="_@u_"/>'                 if @u
+            xml+='<vertAlign val="_@vertAlign_"/>' if @verAlign
+            xml+='<scheme val="_@scheme_"/>'       if @scheme
+            xml+='</rPr>'
+          end
+          xml+='<t>_@value_</t>'
+          xml+='</r>'
+          xml+='</is>'
+          xml+= '</c>'
+        end
+      else @type == :time
+        xml='<c r="_r_" s="_style_"><v>_val_</v></c>'
+      end
+      Patterns[pattern] = xml
+    end
+
+    def formula_body
+      @value.to_s.gsub('=', '')
+    end
+
+    def val
+      if @type == :time
+        # Using hardcoded offsets here as some operating systems will not except a 'negative' offset from the ruby epoc.
+        # (1970)
+        epoc1900 = -2209021200 #Time.local(1900, 1, 1)
+        epoc1904 = -2082877200 #Time.local(1904, 1, 1)
+        epoc = Workbook.date1904 ? epoc1904 : epoc1900
+        ((@value.localtime.to_f - epoc) /60.0/60.0/24.0).to_f
+      else
+        @value
+      end
+    end
 
     private 
 
