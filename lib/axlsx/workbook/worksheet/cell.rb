@@ -186,9 +186,10 @@ module Axlsx
       @value = cast_value(value)
     end
 
+    attr_writer :index
     # @return [Integer] The index of the cell in the containing row.
     def index
-      @row.cells.index(self)
+      @index ||= @row.cells.index(self)
     end
 
     # @return [String] The alpha(column)numeric(row) reference for this sell.

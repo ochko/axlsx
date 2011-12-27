@@ -36,7 +36,7 @@ module Axlsx
     # The index of this row in the worksheet
     # @return [Integer]
     def index 
-      worksheet.rows.index(self)
+      @index ||= worksheet.rows.index(self)
     end
     
     # Serializes the row
@@ -105,6 +105,7 @@ module Axlsx
         options[:style] = cell_style if cell_style
         cell_type = types.is_a?(Array)? types[index] : types
         options[:type] = cell_type if cell_type
+        options[:index] = index
         Cell.new(self, value, options)
       end
     end
